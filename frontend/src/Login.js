@@ -67,6 +67,9 @@ export default function Login() {
         <p className="auth-footer">
           No account? <Link to="/register">Register</Link>
         </p>
+        <p className="auth-footer">
+          <Link to="/">Back to albums</Link>
+        </p>
       </section>
     </div>
   );

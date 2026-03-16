@@ -8,13 +8,16 @@ const verifyToken = require("./middleware/verifyToken");
 const app = express();
 app.use(cors());
 app.use(express.json());
+// Auth endpoints: /api/auth/register and /api/auth/login
 app.use("/api/auth", authRoutes);
 
+// Connect to MongoDB using env var in .env
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log(err));
 
+// Album model for public + protected album routes
 const albumSchema = new mongoose.Schema({
   title: String,
   artist: String,
@@ -24,12 +27,14 @@ const albumSchema = new mongoose.Schema({
 
 const Album = mongoose.model("Album", albumSchema);
 
+// Public: list all albums
 app.get("/api/albums", async (req, res) => {
   const albums = await Album.find();
   res.json(albums);
 });
 
 // Protected route: requires a valid JWT token.
+// Create a new album
 app.post("/api/albums", verifyToken, async (req, res) => {
   const { title, artist, year, genre } = req.body || {};
 
@@ -47,6 +52,7 @@ app.post("/api/albums", verifyToken, async (req, res) => {
   res.status(201).json(album);
 });
 
+// Playlist model for user-specific playlists
 const playlistSchema = new mongoose.Schema({
   name: String,
   description: String,
@@ -58,12 +64,14 @@ const playlistSchema = new mongoose.Schema({
 const Playlist = mongoose.model("Playlist", playlistSchema);
 
 // Protected route: requires a valid JWT token.
+// List playlists belonging to the authenticated user
 app.get("/api/playlists", verifyToken, async (req, res) => {
   const playlists = await Playlist.find({ createdBy: req.user?.id });
   res.json(playlists);
 });
 
 // Protected route: requires a valid JWT token.
+// Create a playlist for the authenticated user
 app.post("/api/playlists", verifyToken, async (req, res) => {
   const { name, description, mood, tracks } = req.body || {};
 
@@ -85,6 +93,7 @@ app.post("/api/playlists", verifyToken, async (req, res) => {
 });
 
 // Protected route: requires a valid JWT token.
+// Reset albums collection with a fixed seed list
 app.post("/api/albums/seed", verifyToken, async (req, res) => {
   const seed = [
     { title: "Blonde", artist: "Frank Ocean", year: 2016, genre: "R&B" },
@@ -101,10 +110,12 @@ app.post("/api/albums/seed", verifyToken, async (req, res) => {
 });
 
 // Protected route: requires a valid JWT token.
+// Delete a specific album by MongoDB id
 app.delete("/api/albums/:id", verifyToken, async (req, res) => {
   const deleted = await Album.findByIdAndDelete(req.params.id);
   if (!deleted) return res.status(404).json({ error: "Album not found" });
   res.json({ message: "Album deleted" });
 });
 
+// Start API server
 app.listen(5001, () => console.log("Server running on port 5001"));

@@ -3,20 +3,27 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
 
 export default function Dashboard() {
+    // User playlists pulled from the API
     const [playlists, setPlaylists] = useState([]);
+    // Search input for filtering playlists
     const [query, setQuery] = useState("");
+    // Form fields for creating a new playlist
     const [form, setForm] = useState({
         name: "",
         description: "",
         mood: "",
         tracks: "",
     });
+    // Create form error message
     const [formError, setFormError] = useState("");
+    // Disable submit while request is in flight
     const [isSaving, setIsSaving] = useState(false);
+    // Auth state + helpers
     const { user, token, logout } = useContext(AuthContext);
     const navigate = useNavigate();
 
     useEffect(() => {
+        // Load current user's playlists on page load / token change
         fetch("http://localhost:5001/api/playlists", {
             cache: "no-store",
             headers: {
@@ -28,6 +35,7 @@ export default function Dashboard() {
             .catch(console.error);
     }, [token]);
 
+    // Client-side search over playlist fields
     const filtered = playlists.filter((p) =>
         `${p.name} ${p.description} ${p.mood} ${p.tracks?.join(" ") || ""}`
             .toLowerCase()
@@ -38,6 +46,7 @@ export default function Dashboard() {
         e.preventDefault();
         setFormError("");
 
+        // Basic validation
         if (!form.name.trim()) {
             setFormError("Playlist name is required.");
             return;
@@ -45,6 +54,7 @@ export default function Dashboard() {
 
         try {
             setIsSaving(true);
+            // Create playlist for current user
             const res = await fetch("http://localhost:5001/api/playlists", {
                 method: "POST",
                 headers: {
@@ -69,6 +79,7 @@ export default function Dashboard() {
                 return;
             }
 
+            // Add new playlist to the top of the list and reset form
             setPlaylists((prev) => [data, ...prev]);
             setForm({ name: "", description: "", mood: "", tracks: "" });
         } catch {
@@ -83,12 +94,14 @@ export default function Dashboard() {
             <header className="header-row">
                 <div>
                     <h1 className="brand">Mixtape.</h1>
+                    {/* Greet logged-in user if available */}
                     <p className="welcome">
                         {user?.username ? `Welcome, ${user.username}` : "Welcome"}
                     </p>
                 </div>
                 <button
                     className="ghost-btn"
+                    // Logout then return to login screen
                     onClick={() => {
                         logout();
                         navigate("/login");
@@ -99,6 +112,7 @@ export default function Dashboard() {
             </header>
 
             <section className="card">
+                {/* Create playlist form */}
                 <h3>Create Playlist</h3>
                 <form className="form-grid" onSubmit={handleCreate}>
                     <input
@@ -139,6 +153,7 @@ export default function Dashboard() {
             </section>
 
             <section className="card">
+                {/* Search and list playlists */}
                 <input
                     className="input search-input"
                     value={query}
